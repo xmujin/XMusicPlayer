@@ -10,6 +10,9 @@
 #include <QPropertyAnimation>
 #include <QLabel>
 #include <QApplication>
+#include <QMediaMetaData>
+#include "musiclistitem.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_mode(ORDER_MODE), m_isListShow(false)
@@ -49,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     playlistContainer->setFixedWidth(300);
     playlistContainer->setFixedHeight(400);
     playlistContainer->setStyleSheet(R"(
-        background: #28c978;
+        background: #f5f5f5;
         border-radius: 20px;
     )");
 
@@ -58,16 +61,33 @@ MainWindow::MainWindow(QWidget *parent)
     playlistLayout->setSpacing(0);                   // 关键：移除间距
 
     musicList = new QListWidget(this);
-    musicList->setStyleSheet(R"(QListWidget {
-        border:none;
-        background-color: #f5f5f5;
-        padding: 15px;
-        border-radius: 0px;
-    })");
+    musicList->setStyleSheet(R"(
+        QListWidget {
+                border: none;
+                background-color: #f5f5f5;
+                padding: 0px;
+                border-radius: 0px;
+                outline: 0;
+            }
+
+
+        QListWidget::item:selected {
+            background: transparent;
+            color: black;
+
+        }
+
+        QListWidget::item:hover {
+            background: transparent;
+            color: black;
+        }
+
+
+    )");
     // 1. 添加标题（QLabel）
-    QLabel *titleLabel = new QLabel("🎵 播放列表", this);
+    QLabel *titleLabel = new QLabel("播放列表", this);
     titleLabel->setFixedHeight(50);
-    titleLabel->setAlignment(Qt::AlignCenter);
+    titleLabel->setAlignment(Qt::AlignLeft);
     titleLabel->setStyleSheet(R"(
         QLabel {
             font-size: 18px;
@@ -76,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
             padding: 10px;
         }
     )");
+
     playlistLayout->addWidget(titleLabel);
     playlistLayout->addWidget(musicList);
 
@@ -146,19 +167,85 @@ void MainWindow::loadMusicDir(const QString &filePath)
         return;
     }
 
+
+
     QFileInfoList fileList = dir.entryInfoList(QDir::Files);
     for(auto element : fileList)
     {
         if(element.suffix() == "mp3")
         {
-            musicList->addItem(element.baseName());
+            // 创建ListWidget的item项
+            QListWidgetItem *item = new QListWidgetItem(musicList);
+            item->setSizeHint(QSize(0, 80));
+            item->setText(element.baseName());
+            QPixmap pixmap(":/Icon/音符.png");
+            MusicListItem* dsb = new MusicListItem(element.baseName(), pixmap, this);
+
+
+
+            // 异步获取封面
+            // QMediaPlayer *player = new QMediaPlayer(this);
+            // player->setSource(QUrl::fromLocalFile(element.filePath()));
+            // connect(player, &QMediaPlayer::metaDataChanged, this, [=]() {
+            //     QVariant coverVariant = player->metaData().value(QMediaMetaData::ThumbnailImage);
+            //     if(coverVariant.canConvert<QImage>()) {
+            //         QPixmap pix = QPixmap::fromImage(coverVariant.value<QImage>());
+            //         img->setPixmap(pix.scaled(img->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            //     }
+            //     else
+            //     {
+            //         QPixmap pixmap(":/Icon/音符.png");
+            //         img->setPixmap(pixmap.scaled(img->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            //     }
+            // });
+
+
+            musicList->setItemWidget(item, dsb);
+
+
         }
     }
+
+    // 连接信号和槽
+    // connect(musicList, &QListWidget::itemSelectionChanged, this, [=]() {
+    //     for (int i = 0; i < musicList->count(); ++i) {
+    //         QListWidgetItem *it = musicList->item(i);
+    //         QWidget *w = musicList->itemWidget(it);
+
+    //         if (it->isSelected()) {
+    //             w->setStyleSheet(R"(
+    //             QWidget {
+    //                 background: #edeeef;
+    //                 border-radius: 0px;
+
+    //             }
+
+    //             QWidget:hover {
+    //                 background: #edeeef;
+    //             }
+    //             )");
+    //         } else {
+    //             w->setStyleSheet(R"(
+    //             QWidget {
+    //                 background: white;
+    //                 border-radius: 0px;
+
+    //             }
+
+    //             QWidget:hover {
+    //                 background: #edeeef;
+    //             }
+    //             )");
+    //         }
+    //     }
+    // });
 }
 
 void MainWindow::startMusic()
 {
-    QString musicName = m_musicDir + musicList->currentItem()->text() + ".mp3";
+    QListWidgetItem *item = musicList->currentItem();
+
+    QString musicName = m_musicDir + item->text() + ".mp3";
     m_player->setSource(QUrl::fromLocalFile(musicName));
 }
 

@@ -10,5 +10,6 @@
         <file>Icon/stop.png</file>
         <file>Icon/下一首.svg</file>
         <file>Icon/音乐.png</file>
+        <file>Icon/音符.png</file>
     </qresource>
 </RCC>
