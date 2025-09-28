@@ -84,6 +84,13 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     )");
+    connect(musicList, &QListWidget::itemClicked, this, [=](QListWidgetItem *item){
+        MusicListItem* myItem = qobject_cast<MusicListItem*>(musicList->itemWidget(item));
+        myItem->showTips();
+
+
+        // qDebug() << "点击了第" << row << "行";
+    });
     // 1. 添加标题（QLabel）
     QLabel *titleLabel = new QLabel("播放列表", this);
     titleLabel->setFixedHeight(50);
@@ -105,16 +112,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     InitButton();
 
-    m_player = new QMediaPlayer(this);
-    m_audioOutput = new QAudioOutput;
-    m_player->setAudioOutput(m_audioOutput);
-    m_audioOutput->setVolume(0.1);
+    musicPlayer = MusicPlayer::getInstance();
+
+
     m_musicDir = "D:\\xiangxun\\Music\\";
     loadMusicDir(m_musicDir);
-    musicList->setCurrentRow(0);
+
+    musicList->setCurrentRow(1);
     startMusic();
-
-
 }
 
 MainWindow::~MainWindow() {}
@@ -168,7 +173,7 @@ void MainWindow::loadMusicDir(const QString &filePath)
     }
 
 
-
+    int i = 0;
     QFileInfoList fileList = dir.entryInfoList(QDir::Files);
     for(auto element : fileList)
     {
@@ -177,11 +182,23 @@ void MainWindow::loadMusicDir(const QString &filePath)
             // 创建ListWidget的item项
             QListWidgetItem *item = new QListWidgetItem(musicList);
             item->setSizeHint(QSize(0, 80));
-            item->setText(element.baseName());
             QPixmap pixmap(":/Icon/音符.png");
-            MusicListItem* dsb = new MusicListItem(element.baseName(), pixmap, this);
+            MusicListItem* dsb = new MusicListItem(element.absoluteFilePath(), pixmap, this);
+            dsb->setRow(i);
+            connect(dsb, &MusicListItem::playClicked, this, [this](MusicListItem *clickedItem) {
 
+                if(currentPlayingItem && currentPlayingItem != clickedItem)
+                {
 
+                    // 停止音乐播放
+                    currentPlayingItem->setPlaying(false);
+                    currentPlayingItem->stopMusic();
+                    currentPlayingItem = clickedItem;
+                    musicPlayer->setSource(currentPlayingItem->getMusicPath());
+                }
+                handlePlaySlot();
+
+            });
 
             // 异步获取封面
             // QMediaPlayer *player = new QMediaPlayer(this);
@@ -204,49 +221,20 @@ void MainWindow::loadMusicDir(const QString &filePath)
 
 
         }
+        i++;
     }
-
-    // 连接信号和槽
-    // connect(musicList, &QListWidget::itemSelectionChanged, this, [=]() {
-    //     for (int i = 0; i < musicList->count(); ++i) {
-    //         QListWidgetItem *it = musicList->item(i);
-    //         QWidget *w = musicList->itemWidget(it);
-
-    //         if (it->isSelected()) {
-    //             w->setStyleSheet(R"(
-    //             QWidget {
-    //                 background: #edeeef;
-    //                 border-radius: 0px;
-
-    //             }
-
-    //             QWidget:hover {
-    //                 background: #edeeef;
-    //             }
-    //             )");
-    //         } else {
-    //             w->setStyleSheet(R"(
-    //             QWidget {
-    //                 background: white;
-    //                 border-radius: 0px;
-
-    //             }
-
-    //             QWidget:hover {
-    //                 background: #edeeef;
-    //             }
-    //             )");
-    //         }
-    //     }
-    // });
 }
 
 void MainWindow::startMusic()
 {
-    QListWidgetItem *item = musicList->currentItem();
 
-    QString musicName = m_musicDir + item->text() + ".mp3";
-    m_player->setSource(QUrl::fromLocalFile(musicName));
+    QListWidgetItem* item = musicList->currentItem();
+    if (item) {
+        qDebug() << "当前选中的行:" << musicList->row(item);
+    }
+    MusicListItem* music = qobject_cast<MusicListItem*>(musicList->itemWidget(item));
+    musicPlayer->setSource(music->getMusicPath());
+    currentPlayingItem = music;
 }
 
 /**
@@ -254,23 +242,31 @@ void MainWindow::startMusic()
  */
 void MainWindow::handlePlaySlot()
 {
-    if(m_player->playbackState() == QMediaPlayer::PlayingState)
+    qDebug() << musicPlayer->getPlayState();
+    if(musicPlayer->getPlayState() == QMediaPlayer::PlayingState)
     {
-        m_player->pause();
+        musicPlayer->pause();
         playBtn->setIcon(QIcon(":/Icon/play.png"));
+        currentPlayingItem->setPlaying(false);
+        currentPlayingItem->pauseMusic();
     }
     else
     {
-        m_player->play();
+        musicPlayer->play();
         playBtn->setIcon(QIcon(":/Icon/pause.png"));
+        currentPlayingItem->setPlaying(true);
+        currentPlayingItem->playMusic();
+
     }
+
+
 
 }
 
 
 void MainWindow::handleNextSlot()
 {
-    int currentRow = musicList->currentRow();
+    int currentRow = currentPlayingItem->getRow();
     int nextRow = 0;
     if(m_mode == ORDER_MODE)
     {
@@ -284,6 +280,8 @@ void MainWindow::handleNextSlot()
     }
 
     musicList->setCurrentRow(nextRow);
+    currentPlayingItem->setPlaying(false);
+    currentPlayingItem->stopMusic();
     startMusic();
     handlePlaySlot();
 }

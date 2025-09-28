@@ -16,12 +16,15 @@ public:
     void changeIconColor(QColor color);
     QColor getNormalColor() { return normal; }
     QColor getHoverColor() { return hover; }
+    void setHover(bool v);
+
 
 signals:
 
 private:
     QColor normal {"#525a6c"};
     QColor hover {"#242d41"};
+    bool enableHover = true;
 
 };
 

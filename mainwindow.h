@@ -6,6 +6,8 @@
 #include <QMediaPlayer>
 #include <QAudioOutput>
 #include <QListWidget>
+#include "musiclistitem.h"
+#include "musicplayer.h"
 
 enum PlayMode
 {
@@ -37,6 +39,8 @@ private:
     void hideAnimation(QWidget* widget);
 
 private:
+
+    MusicPlayer* musicPlayer;
     MyPushButton* listBtn;
     MyPushButton* modeBtn;
     MyPushButton* nextBtn;
@@ -45,14 +49,16 @@ private:
 
     QListWidget* musicList;
 
-    QMediaPlayer* m_player;
-    QAudioOutput*  m_audioOutput;
+
     PlayMode m_mode;
     QString m_musicDir;
 
     QWidget* playlistContainer;
 
     bool m_isListShow;
+
+    // 保存当前播放的项
+    MusicListItem *currentPlayingItem = nullptr;
 
 
 };

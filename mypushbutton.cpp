@@ -8,13 +8,20 @@ MyPushButton::MyPushButton(QWidget *parent)
 void MyPushButton::enterEvent(QEnterEvent *event)
 {
     QPushButton::enterEvent(event);
-    changeIconColor(hover);
+    if(enableHover)
+    {
+        changeIconColor(hover);
+    }
+
 }
 
 void MyPushButton::leaveEvent(QEvent *event)
 {
     QPushButton::leaveEvent(event);
-    changeIconColor(normal);
+    if(enableHover)
+    {
+        changeIconColor(normal);
+    }
 }
 
 void MyPushButton::changeIconColor(QColor color)
@@ -36,4 +43,9 @@ void MyPushButton::changeIconColor(QColor color)
 
     // 将染色后的 QPixmap 设置回按钮
     this->setIcon(QIcon(coloredPixmap));
+}
+
+void MyPushButton::setHover(bool v)
+{
+    enableHover = v;
 }
