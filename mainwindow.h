@@ -8,6 +8,7 @@
 #include <QListWidget>
 #include "musiclistitem.h"
 #include "musicplayer.h"
+#include "musiclist.h"
 
 enum PlayMode
 {
@@ -28,6 +29,9 @@ public slots:
     void handleModeSlot();
     void handleNextSlot();
     void handleShowListSlot();
+    void handleCurrentRowChanged(int row);
+
+
 public:
     void InitButton();
     void setButtonIcon(MyPushButton* btn, const QString& iconPath);
@@ -47,7 +51,7 @@ private:
     MyPushButton* playBtn;
     MyPushButton* prevBtn;
 
-    QListWidget* musicList;
+    MusicList* musicList;
 
 
     PlayMode m_mode;
@@ -59,6 +63,8 @@ private:
 
     // 保存当前播放的项
     MusicListItem *currentPlayingItem = nullptr;
+    // 保存当前播放的项
+    MusicListItem *currentSelectedItem = nullptr;
 
 
 };

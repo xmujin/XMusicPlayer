@@ -27,7 +27,7 @@ MusicListItem::MusicListItem(const QString &musicPath, const QPixmap &musicImg, 
 
 
     // 创建封面图片
-    QLabel *img = new QLabel(coverContainer);
+    img = new QLabel(coverContainer);
     img->setFixedSize(80, 80);
     img->setPixmap(musicImg.scaled(QSize(60, 60), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     img->setAlignment(Qt::AlignCenter);
@@ -62,28 +62,107 @@ MusicListItem::MusicListItem(const QString &musicPath, const QPixmap &musicImg, 
 
 void MusicListItem::enterEvent(QEnterEvent *event)
 {
-    if(!_isPlaying)
-    {
-        playBtn->show();
-        coverContainer->setStyleSheet("background: #edeeef; border-radius: 0px");
-        musicNameLabel->setStyleSheet("font-size: 16px; color: #333; padding: 0px 20px 0px; border-radius: 0px;background: #edeeef;");
-
-    }
+    _isHovered = true;
+    updateStyle();
+    QWidget::enterEvent(event);
 
 }
 
 void MusicListItem::leaveEvent(QEvent *event)
 {
-
-    if(!_isPlaying)
-    {
-        playBtn->hide();
-        coverContainer->setStyleSheet("background: #f5f5f5; border-radius: 0px");
-        musicNameLabel->setStyleSheet("font-size: 16px; color: #333; padding: 0px 20px 0px; border-radius: 0px;background: #f5f5f5;");
-
-    }
+    _isHovered = false;
+    updateStyle();
+    QWidget::leaveEvent(event);
 
 }
+
+void MusicListItem::updateStyle()
+{
+    // 基础背景颜色（默认）
+    QString bgColor = "#f5f5f5";
+    QString textColor = "#333";
+    bool showBtn = false;
+    // 当悬停 播放 选择 时更改背景颜色
+    if(_isHovered || _isPlaying || _isSelected)
+    {
+        bgColor = "#edeeef";
+    }
+
+    if(_isPlaying && !_isSelected)
+    {
+        bgColor = "#f5f5f5";
+    }
+
+    if(_isPlaying && _isHovered)
+    {
+        bgColor = "#edeeef";
+    }
+
+
+
+    // 如果正在播放，文字高亮为红色，并显示按钮
+    if (_isPlaying || _isCurrent) {
+        textColor = "#fc3d4a";
+        showBtn = true;
+    }
+    else if (_isHovered) // 如果没有播放但悬停中，显示按钮
+    {
+        showBtn = true;
+    }
+    else if (_isSelected) // 如果被选中但没播放，按钮可以隐藏（根据你的需求决定）
+    {
+        showBtn = false;
+    }
+
+
+    // 应用最终样式
+    coverContainer->setStyleSheet(QString("background: %1; border-radius: 0px").arg(bgColor));
+    musicNameLabel->setStyleSheet(QString("font-size: 16px; color: %1; padding: 0px 20px 0px; border-radius: 0px; background: %2;")
+                                      .arg(textColor, bgColor));
+
+    showBtn ? playBtn->show() : playBtn->hide();
+}
+
+void MusicListItem::mousePressEvent(QMouseEvent *event)
+{
+    _isSelected = true;
+    emit itemSelected(this); // 通知外部当前项被选中
+    QWidget::mousePressEvent(event);
+    updateStyle();
+}
+
+bool MusicListItem::isCurrent() const
+{
+    return _isCurrent;
+}
+
+void MusicListItem::setIsCurrent(bool newIsCurrent)
+{
+    _isCurrent = newIsCurrent;
+    updateStyle();
+}
+
+bool MusicListItem::isHovered() const
+{
+    return _isHovered;
+}
+
+void MusicListItem::setIsHovered(bool newIsHovered)
+{
+    _isHovered = newIsHovered;
+}
+
+bool MusicListItem::isSelected() const
+{
+    return _isSelected;
+}
+
+void MusicListItem::setIsSelected(bool newIsSelected)
+{
+    _isSelected = newIsSelected;
+}
+
+
 
 void MusicListItem::setRow(int newRow)
 {
@@ -98,37 +177,37 @@ int MusicListItem::getRow() const
 void MusicListItem::playMusic()
 {
     _isPlaying = true;
-    playBtn->show();
+    _isSelected = true;
+    _isCurrent = true;
     playBtn->setIcon(QIcon(":/Icon/pause.png"));
     playBtn->changeIconColor(QColor("#fff"));
 
-
-    coverContainer->setStyleSheet("background: #edeeef; border-radius: 0px");
-    musicNameLabel->setStyleSheet("font-size: 16px; color: #333; padding: 0px 20px 0px; border-radius: 0px;background: #edeeef;");
-
+    updateStyle();
 }
 
 void MusicListItem::pauseMusic()
 {
     _isPlaying = false;
+    playBtn->setIcon(QIcon(":/Icon/play.png"));
+    playBtn->changeIconColor(QColor("#fff"));
+    updateStyle();
 }
 
 void MusicListItem::stopMusic()
 {
+
     _isPlaying = false;
-    playBtn->hide();
+    _isSelected = false;
+    _isCurrent = false;
+    playBtn->setIcon(QIcon(":/Icon/play.png"));
+    playBtn->changeIconColor(QColor("#fff"));
 
-    coverContainer->setStyleSheet("background: #f5f5f5; border-radius: 0px");
-    musicNameLabel->setStyleSheet("font-size: 16px; color: #333; padding: 0px 20px 0px; border-radius: 0px;background: #f5f5f5;");
+
+    updateStyle();
 }
 
-void MusicListItem::showTips()
-{
-    playBtn->show();
-    coverContainer->setStyleSheet("background: #edeeef; border-radius: 0px");
-    musicNameLabel->setStyleSheet("font-size: 16px; color: #333; padding: 0px 20px 0px; border-radius: 0px;background: #edeeef;");
 
-}
+
 
 bool MusicListItem::isPlaying()
 {
@@ -149,6 +228,14 @@ void MusicListItem::setPlaying(bool state)
         playBtn->setIcon(QIcon(":/Icon/play.png"));
         playBtn->changeIconColor(QColor("#fff"));
     }
+
+    updateStyle();
+
+}
+
+void MusicListItem::setCoverImage(const QPixmap &pix)
+{
+    img->setPixmap(pix.scaled(60, 60, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }
 
 QString MusicListItem::getMusicPath()
