@@ -26,13 +26,26 @@ MainWindow::MainWindow(QWidget *parent)
     nextBtn = new MyPushButton(this);
     playBtn = new MyPushButton(this);
     prevBtn = new MyPushButton(this);
+    volumnBtn = new MyPushButton(this);
+
+    volumnBtn->setVisible(true);
+
+    volumeSlider = new QSlider(Qt::Vertical, this);
+    volumeSlider->setRange(0, 100);
+    volumeSlider->setValue(20);
+    volumeSlider->setFixedSize(18, 84);
 
 
 
     QWidget *centralWidget = new QWidget(this);
+    volumeSlider->raise();
+
     // 设置主垂直布局
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
     mainLayout->addStretch();
+
+
+
     // 水平布局
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(prevBtn);
@@ -40,6 +53,8 @@ MainWindow::MainWindow(QWidget *parent)
     buttonLayout->addWidget(nextBtn);
     buttonLayout->addWidget(modeBtn);
     buttonLayout->addWidget(listBtn);
+    buttonLayout->addWidget(volumnBtn);
+
     // 在垂直布局中添加水平布局
     mainLayout->addLayout(buttonLayout);
     mainLayout->setContentsMargins(0, 0, 0, 30);
@@ -56,9 +71,14 @@ MainWindow::MainWindow(QWidget *parent)
         border-radius: 20px;
     )");
 
+
+
     QVBoxLayout *playlistLayout = new QVBoxLayout(playlistContainer);
     playlistLayout->setContentsMargins(0, 0, 0, 0);  // 关键：移除边距
     playlistLayout->setSpacing(0);                   // 关键：移除间距
+
+
+
 
     musicList = new MusicList(this);
     musicList->setStyleSheet(R"(
@@ -110,6 +130,7 @@ MainWindow::MainWindow(QWidget *parent)
     playlistContainer->show();
     playlistContainer->hide();
 
+
     InitButton();
 
     musicPlayer = MusicPlayer::getInstance();
@@ -120,9 +141,29 @@ MainWindow::MainWindow(QWidget *parent)
     connect(musicList, &MusicList::currentRowChanged, this, &MainWindow::handleCurrentRowChanged);
     musicList->setCurrentRow(0);
 
+    QPoint inWindow = volumnBtn->mapTo(this, QPoint(0, 0));
+    qDebug() << "窗口内坐标:" << inWindow;
+
+
+    connect(volumeSlider, &QSlider::valueChanged, this, [this](int value){
+        musicPlayer->setVolume(value / 100.0);
+    } );
+
+
+
+
+
 }
 
 MainWindow::~MainWindow() {}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QMainWindow::showEvent(event);
+
+    volumeSlider->move(volumnBtn->x(), volumnBtn->y() - 100);
+
+}
 
 
 
@@ -139,12 +180,16 @@ void MainWindow::InitButton()
     setButtonIcon(modeBtn, ":/Icon/order.png");
     // 播放列表
     setButtonIcon(listBtn, ":/Icon/list.png");
+    // 音量
+    setButtonIcon(volumnBtn, ":/Icon/volumeLow.png");
+
+
 
     connect(playBtn, &QPushButton::clicked, this, &MainWindow::handlePlaySlot);
     connect(modeBtn, &QPushButton::clicked, this, &MainWindow::handleModeSlot);
     connect(nextBtn, &QPushButton::clicked, this, &MainWindow::handleNextSlot);
     connect(listBtn, &QPushButton::clicked, this, &MainWindow::handleShowListSlot);
-
+    connect(volumnBtn, &QPushButton::clicked, this, &MainWindow::onVolumnBtnClicked);
 }
 
 
@@ -366,5 +411,28 @@ void MainWindow::handleCurrentRowChanged(int row)
     musicPlayer->setSource(music->getMusicPath());
     currentPlayingItem = music;
     qDebug() << "当前项改变";
+}
+
+void MainWindow::onVolumnBtnClicked()
+{
+    static bool isMute = false;
+    static float prevVolume = musicPlayer->getVolume();
+    if(!isMute)
+    {
+        prevVolume = musicPlayer->getVolume();
+        musicPlayer->setVolume(0);
+        volumeSlider->setValue(0);
+        isMute = true;
+        volumnBtn->setIcon(QIcon(":/Icon/volumeDisable.png"));
+    }
+    else
+    {
+        isMute = false;
+        musicPlayer->setVolume(prevVolume);
+        volumeSlider->setValue(prevVolume * 100);
+        volumnBtn->setIcon(QIcon(":/Icon/volumeLow.png"));
+    }
+
+
 }
 

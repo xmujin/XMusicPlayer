@@ -32,6 +32,8 @@ public:
     QMediaPlayer::PlaybackState getPlayState();
 
 
+    float getVolume() const;
+
 protected:
     static MusicPlayer* _musicPlayer;
 
@@ -39,6 +41,7 @@ private:
     QMediaPlayer* m_player;
     QAudioOutput* m_audioOutput;
 
+    float volume;
 
 signals:
 };

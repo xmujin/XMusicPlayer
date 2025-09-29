@@ -9,6 +9,8 @@
 #include "musiclistitem.h"
 #include "musicplayer.h"
 #include "musiclist.h"
+#include <QSlider>
+
 
 enum PlayMode
 {
@@ -24,13 +26,16 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void showEvent(QShowEvent *event) override;
+
 public slots:
     void handlePlaySlot();
     void handleModeSlot();
     void handleNextSlot();
     void handleShowListSlot();
     void handleCurrentRowChanged(int row);
-
+    void onVolumnBtnClicked();
 
 public:
     void InitButton();
@@ -50,8 +55,11 @@ private:
     MyPushButton* nextBtn;
     MyPushButton* playBtn;
     MyPushButton* prevBtn;
+    MyPushButton* volumnBtn;
 
     MusicList* musicList;
+
+    QSlider *volumeSlider;
 
 
     PlayMode m_mode;
